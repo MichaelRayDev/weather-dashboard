@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weatherly</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      transition: background 0.6s ease;
+      letter-spacing: 0.01em;
+    }
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 1rem;
+      flex: 1;
+      width: 100%;
+    }
+    .intro { margin-bottom: 2rem; }
+    .intro h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+    #weather-emoji-title { font-size: 2.4rem; vertical-align: middle; }
+    .intro p {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.95rem;
+      max-width: 500px;
+      line-height: 1.5;
+    }
+    .search-section { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
+    .search-section input {
+      flex: 1;
+      padding: 0.85rem 1.2rem;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.25s;
+    }
+    .search-section input::placeholder { color: rgba(255,255,255,0.5); }
+    .search-section input:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.12); }
+    .search-section button {
+      padding: 0.85rem 1.6rem;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      background: rgba(59,130,246,0.85);
+      backdrop-filter: blur(12px);
+    }
+    .search-section button:hover { background: #2563eb; }
+    .recent { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.8rem; }
+    .recent button {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: 0.4rem 1rem;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .recent button:hover { background: rgba(255,255,255,0.18); }
+    .weather-panel {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .current-weather { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+    .current-weather img { width: 90px; filter: drop-shadow(0 8px 12px rgba(0,0,0,0.3)); }
+    .temp-block .temp { font-size: 3.8rem; font-weight: 700; line-height: 1; }
+    .temp-block .condition { font-size: 1rem; text-transform: capitalize; opacity: 0.85; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.2rem; }
+    .meta-item {
+      background: rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .meta-item .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.65; margin-bottom: 0.25rem; }
+    .meta-item .value { font-size: 1.3rem; font-weight: 600; }
+    .forecast-title { font-size: 1.2rem; font-weight: 600; margin: 2rem 0 1rem; }
+    .forecast-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.8rem; }
+    .forecast-card {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 1rem 0.5rem;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .forecast-card img { width: 48px; }
+    .forecast-card .day { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
+    .forecast-card .temps { font-size: 0.85rem; opacity: 0.9; }
+    .error-msg {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.35);
+      border-radius: 16px;
+      padding: 1rem 1.5rem;
+      color: #fecaca;
+      backdrop-filter: blur(12px);
+    }
+    .loading { text-align: center; padding: 2rem; font-size: 1.1rem; opacity: 0.8; }
+    footer {
+      text-align: center;
+      padding: 1.5rem 1rem 2rem;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+    footer a { color: white; text-decoration: underline; margin: 0 0.3rem; }
+    footer a:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="intro">
+      <h1><span id="weather-emoji-title">⛅</span> Weatherly</h1>
+      <p>Real-time weather, 5‑day forecast, and dynamic skies. Built with vanilla JavaScript & OpenWeather API.</p>
+    </div>
+
+    <div class="search-section">
+      <input type="text" id="city-input" placeholder="Search city..." autofocus>
+      <button id="search-btn">Search</button>
+    </div>
+
+    <div id="recent" class="recent"></div>
+    <div id="weather-container"></div>
+    <div id="loading" class="loading" style="display:none;">Fetching weather...</div>
+  </div>
+
+  <footer>
+    <p>© 2026 Michael Onyemazu ·
+      <a href="https://github.com/MichaelRayDev">GitHub</a> ·
+      <a href="https://michael-onyemazu.netlify.app">Portfolio</a>
+    </p>
+  </footer>
+
+  <script>
+    const API_KEY = '5d13dac4d6540728b68394f43f5835cd'; 
+    const weatherContainer = document.getElementById('weather-container');
+    const loadingEl = document.getElementById('loading');
+    const cityInput = document.getElementById('city-input');
+    const searchBtn = document.getElementById('search-btn');
+    const recentDiv = document.getElementById('recent');
+    const body = document.body;
+    const titleEmoji = document.getElementById('weather-emoji-title');
+
+    // --- Emoji map for OpenWeatherMap condition codes ---
+    function getWeatherEmoji(iconCode) {
+      if (!iconCode) return '⛅'; // default fallback
+      const code = iconCode.substring(0, 2); // e.g., "01d" → "01"
+      const map = {
+        '01': '☀️', // clear sky
+        '02': '🌤️', // few clouds
+        '03': '⛅', // scattered clouds
+        '04': '☁️', // broken clouds
+        '09': '🌧️', // shower rain
+        '10': '🌦️', // rain
+        '11': '⛈️', // thunderstorm
+        '13': '🌨️', // snow
+        '50': '🌫️'  // mist
+      };
+      return map[code] || '🌡️';
+    }
+
+    // --- Dynamic Background Gradients ---
+    function updateBackground(weatherMain, isNight) {
+      let gradient;
+      if (isNight) {
+        gradient = 'linear-gradient(135deg, #0b0f19 0%, #1a1f2e 100%)';
+      } else {
+        switch (weatherMain.toLowerCase()) {
+          case 'clear':   gradient = 'linear-gradient(135deg, #1e3a8a, #3b82f6)'; break;
+          case 'clouds':  gradient = 'linear-gradient(135deg, #374151, #6b7280)'; break;
+          case 'rain':
+          case 'drizzle': gradient = 'linear-gradient(135deg, #1e293b, #334155)'; break;
+          case 'thunderstorm': gradient = 'linear-gradient(135deg, #0f172a, #1e1e2f)'; break;
+          case 'snow':    gradient = 'linear-gradient(135deg, #cbd5e1, #e2e8f0)'; break;
+          default:        gradient = 'linear-gradient(135deg, #1e3a8a, #3b82f6)';
+        }
+      }
+      body.style.background = gradient;
+    }
+
+    // --- Recent Searches (localStorage) ---
+    function addRecent(city) {
+      let cities = JSON.parse(localStorage.getItem('recentCities') || '[]');
+      cities = cities.filter(c => c.toLowerCase() !== city.toLowerCase());
+      cities.unshift(city);
+      if (cities.length > 5) cities.pop();
+      localStorage.setItem('recentCities', JSON.stringify(cities));
+      renderRecent();
+    }
+    function renderRecent() {
+      const cities = JSON.parse(localStorage.getItem('recentCities') || '[]');
+      recentDiv.innerHTML = cities.map(c => `<button>${c}</button>`).join('');
+      document.querySelectorAll('#recent button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          cityInput.value = btn.textContent;
+          fetchWeather(btn.textContent);
+        });
+      });
+    }
+
+    // --- Fetch & Render ---
+    async function fetchWeather(city) {
+      if (!city) return;
+      loadingEl.style.display = 'block';
+      weatherContainer.innerHTML = '';
+      try {
+        const [currentRes, forecastRes] = await Promise.all([
+          fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`),
+          fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`)
+        ]);
+
+        if (!currentRes.ok) {
+          if (currentRes.status === 401) {
+            throw new Error('API key not activated yet. Please wait a few minutes and try again.');
+          } else if (currentRes.status === 404) {
+            throw new Error('City not found. Check the spelling or try a different city.');
+          } else {
+            throw new Error('Something went wrong. Please try again later.');
+          }
+        }
+
+        const current = await currentRes.json();
+        const forecast = await forecastRes.json();
+
+        const isNight = current.weather[0].icon.includes('n');
+        updateBackground(current.weather[0].main, isNight);
+
+        // Update title emoji
+        titleEmoji.textContent = getWeatherEmoji(current.weather[0].icon);
+
+        weatherContainer.innerHTML = `
+          <div class="weather-panel">
+            <div class="current-weather">
+              <img src="https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png" alt="">
+              <div class="temp-block">
+                <div class="temp">${Math.round(current.main.temp)}°C</div>
+                <div class="condition">${current.weather[0].description} · ${current.name}, ${current.sys.country}</div>
+              </div>
+            </div>
+            <div class="meta-grid">
+              <div class="meta-item"><div class="label">Humidity</div><div class="value">${current.main.humidity}%</div></div>
+              <div class="meta-item"><div class="label">Wind</div><div class="value">${current.wind.speed} m/s</div></div>
+              <div class="meta-item"><div class="label">Feels like</div><div class="value">${Math.round(current.main.feels_like)}°C</div></div>
+            </div>
+          </div>
+          <div class="forecast-title">5-Day Forecast</div>
+          <div class="forecast-grid" id="forecast-grid"></div>
+        `;
+
+        // Build daily forecast
+        const daily = {};
+        forecast.list.forEach(entry => {
+          const date = entry.dt_txt.split(' ')[0];
+          if (!daily[date]) daily[date] = { min: entry.main.temp, max: entry.main.temp, icon: entry.weather[0].icon };
+          else {
+            daily[date].min = Math.min(daily[date].min, entry.main.temp);
+            daily[date].max = Math.max(daily[date].max, entry.main.temp);
+          }
+        });
+        const forecastGrid = document.getElementById('forecast-grid');
+        Object.keys(daily).slice(0,5).forEach(date => {
+          const d = daily[date];
+          forecastGrid.innerHTML += `
+            <div class="forecast-card">
+              <div class="day">${new Date(date).toDateString().slice(0,10)}</div>
+              <img src="https://openweathermap.org/img/wn/${d.icon}.png" alt="">
+              <div class="temps">${Math.round(d.max)}° / ${Math.round(d.min)}°</div>
+            </div>
+          `;
+        });
+
+        addRecent(city);
+      } catch (err) {
+        weatherContainer.innerHTML = `<div class="error-msg">${err.message}</div>`;
+      } finally {
+        loadingEl.style.display = 'none';
+      }
+    }
+
+    searchBtn.addEventListener('click', () => fetchWeather(cityInput.value));
+    cityInput.addEventListener('keypress', e => { if (e.key === 'Enter') fetchWeather(cityInput.value); });
+    renderRecent();
+  </script>
+</body>
+</html>
